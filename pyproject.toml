@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chinese-bench-auditor"
+version = "0.1.0"
+description = "Automated Data Quality Control (DQC), Leakage & Bad-Case Auditing Toolkit for Chinese LLM Benchmarks"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+eval = ["requests>=2.28"]
