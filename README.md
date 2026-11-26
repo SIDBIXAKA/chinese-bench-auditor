@@ -24,6 +24,26 @@ python -m unittest discover -s tests -v
 # 2. 对 CMMLU 数据集执行全量审计
 python -m bench_auditor audit --data-dir data/raw/cmmlu --out-dir outputs/cmmlu_v1_0_1
 
-# 3. 汇总人工/多模型核查表
+# 3. 方式A：使用硅基流动等 OpenAI 兼容 API 一键批量测试高危 Bad Case（支持断点续跑）
+python -m bench_auditor run-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv --api-key sk-xxx --summary-md outputs/cmmlu_v1_0_1/eval_summary.md
+
+# 4. 方式B：零 API 成本导出网页端批次测试题（可直接贴入 DeepSeek / 豆包 / 通义网页）
+python -m bench_auditor export-prompts --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv --out outputs/cmmlu_v1_0_1/web_eval_prompts.txt --limit 20
+
+# 5. 汇总人工/多模型核查表
 python -m bench_auditor summarize-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv
 ```
+
+## 实证战果（CMMLU v1.0.1 全量审计与多模型对比）
+
+- **全量数据审计**：扫描 CMMLU 11,917 条样本，检出 772 条缺陷条目（819 次规则命中），包含 12 组同题金标冲突、1 处重复选项、3 处纯文本缺失图表“瞎子题”及 4 对 `dev -> test` 精确泄露。
+- **上游开源社区贡献**：
+  - 提交官方 Issue：[haonan-li/CMMLU#94](https://github.com/haonan-li/CMMLU/issues/94)
+  - 提交修复 Pull Request：修正 `data/test/high_school_mathematics.csv` 第 130 行（`id=128`）集合真子集金标错标（`C -> A`）。
+- **多模型 Bad Case 实测（50 条高危样本，`DeepSeek-V3` vs `Qwen2.5-7B-Instruct`）**：
+  - `MODELS_AGREE_WITH_GOLD`：24 条
+  - `MODEL_SPLIT_OR_ERROR`：14 条
+  - `SUSPECTED_GOLD_ERROR_MODEL_UNANIMOUS`：7 条（两模型一致且与原金标冲突，高度疑似题库错标）
+  - `BLIND_CONTEXT_HALLUCINATION`：4 条（缺失图表上下文时模型仍强行作答）
+  - `BLIND_CONTEXT_ABSTAINED`：1 条（模型正确拒答 `UNANSWERABLE`）
+  - 详细实证报告见 [`outputs/cmmlu_v1_0_1/eval_summary.md`](outputs/cmmlu_v1_0_1/eval_summary.md)
