@@ -44,6 +44,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_eval = sub.add_parser("summarize-eval", help="Summarize filled badcase_eval_sheet.csv")
     p_eval.add_argument("--csv", required=True, help="Path to badcase_eval_sheet.csv")
+    p_eval.add_argument("--summary-md", default="", help="Optional path to write Markdown eval summary")
     return parser
 
 
@@ -81,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "summarize-eval":
-        summary = summarize_eval_sheet(args.csv)
+        summary = summarize_eval_sheet(args.csv, summary_md_path=args.summary_md or None)
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return 0
     return 1

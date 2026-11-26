@@ -13,7 +13,28 @@
 | `BLIND_CONTEXT_HALLUCINATION` | 4 | 缺失图片/表格上下文，但模型仍强行瞎猜作答（模型幻觉） |
 | `BLIND_CONTEXT_ABSTAINED` | 1 | 缺失图片/表格上下文，模型正确识别并拒答 UNANSWERABLE |
 
-## 二、典型案例明晰（前 15 条已测记录）
+## 二、人工复核最终裁决统计（Human Verdicts）
+
+| 人工裁决结论 | 样本数 |
+| :--- | ---: |
+| `GOLD_CORRECT` | 3 |
+| `GOLD_ERROR` | 4 |
+| `MODEL_ERROR_GOLD_CORRECT` | 3 |
+
+### 已复核样本明细
+
+- **`dev/elementary_mathematics#1`** -> `GOLD_CORRECT` | 原金标 `D` | verified: 2^4 - 1 = 15 (gold D correct)
+- **`test/education#114`** -> `GOLD_ERROR` | 原金标 `A` | verified: should be B (政治经济制度), contradicts test/education#131
+- **`test/education#131`** -> `GOLD_CORRECT` | 原金标 `C` | verified: 政治经济制度 (gold C correct)
+- **`test/high_school_mathematics#128`** -> `GOLD_ERROR` | 原金标 `C` | verified: 2^4 - 1 = 15, should be A (PR fixed)
+- **`test/logical#84`** -> `GOLD_ERROR` | 原金标 `C` | verified: should be D (所有前提真而结论假), contradicts test/logical#85
+- **`test/logical#85`** -> `GOLD_CORRECT` | 原金标 `C` | verified: 所有前提真而结论假 (gold C correct)
+- **`test/sociology#1`** -> `GOLD_ERROR` | 原金标 `C` | verified: Merton strain theory -> 创新 (A), contradicts test/sociology#74
+- **`test/sociology#74`** -> `MODEL_ERROR_GOLD_CORRECT` | 原金标 `A` | verified: gold A (创新) is correct; both DeepSeek & Qwen mispredicted B (反叛)
+- **`dev/college_mathematics#1`** -> `MODEL_ERROR_GOLD_CORRECT` | 原金标 `C` | verified: removable discontinuities at x=-1,0,1 (count=3, gold C correct); DeepSeek truncated, Qwen wrong
+- **`test/college_mathematics#6`** -> `MODEL_ERROR_GOLD_CORRECT` | 原金标 `D` | verified: removable discontinuities at x=-1,0,1 (count=3, gold D correct); DeepSeek truncated, Qwen wrong
+
+## 三、典型案例明晰（前 15 条已测记录）
 
 - **`dev/elementary_mathematics#1`** (`CHK_CONFLICTING_GOLD_ANSWER`) | 原金标: `D` | model_deepseek_ans=D, model_qwen_ans=B  
   题干：集合A={1，2,3, 4}的真⼦集个数为

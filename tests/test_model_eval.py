@@ -106,3 +106,22 @@ class TestModelEval(unittest.TestCase):
             exported = export_web_prompts(csv_path, txt_path, limit=5)
             self.assertEqual(exported, 1)
             self.assertTrue(os.path.isfile(txt_path))
+
+            from bench_auditor.model_eval import summarize_eval_sheet
+
+            with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
+                r = list(csv.DictReader(f))
+            r[0]["human_verdict"] = "GOLD_ERROR"
+            r[0]["root_cause_notes"] = "verified: should be A"
+            with open(csv_path, "w", encoding="utf-8-sig", newline="") as f:
+                w = csv.DictWriter(f, fieldnames=fieldnames)
+                w.writeheader()
+                w.writerows(r)
+
+            sum_md = os.path.join(tmp, "re_summary.md")
+            resumed = summarize_eval_sheet(csv_path, summary_md_path=sum_md)
+            self.assertEqual(resumed["human_verdicts"], {"GOLD_ERROR": 1})
+            with open(sum_md, "r", encoding="utf-8") as f:
+                md_text = f.read()
+            self.assertIn("Human Verdicts", md_text)
+            self.assertIn("GOLD_ERROR", md_text)

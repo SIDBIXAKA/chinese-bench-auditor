@@ -30,8 +30,8 @@ python -m bench_auditor run-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.c
 # 4. 方式B：零 API 成本导出网页端批次测试题（可直接贴入 DeepSeek / 豆包 / 通义网页）
 python -m bench_auditor export-prompts --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv --out outputs/cmmlu_v1_0_1/web_eval_prompts.txt --limit 20
 
-# 5. 汇总人工/多模型核查表
-python -m bench_auditor summarize-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv
+# 5. 汇总人工/多模型核查表（可重新渲染 Markdown 报告）
+python -m bench_auditor summarize-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_sheet.csv --summary-md outputs/cmmlu_v1_0_1/eval_summary.md
 ```
 
 ## 实证战果（CMMLU v1.0.1 全量审计与多模型对比）
@@ -46,4 +46,8 @@ python -m bench_auditor summarize-eval --csv outputs/cmmlu_v1_0_1/badcase_eval_s
   - `SUSPECTED_GOLD_ERROR_MODEL_UNANIMOUS`：7 条（两模型一致且与原金标冲突，高度疑似题库错标）
   - `BLIND_CONTEXT_HALLUCINATION`：4 条（缺失图表上下文时模型仍强行作答）
   - `BLIND_CONTEXT_ABSTAINED`：1 条（模型正确拒答 `UNANSWERABLE`）
+- **人工抽检最终裁决（已核查 10 条高危分歧样本）**：
+  - 实锤题库错标（`GOLD_ERROR`）：4 条（含 `test/high_school_mathematics#128`、`test/logical#84`、`test/education#114`、`test/sociology#1`）
+  - 题库正确且模型集体翻车（`MODEL_ERROR_GOLD_CORRECT`）：3 条（含高等数学可去间断点 2 题与社会学默顿理论 1 题）
+  - 题库正确对照组（`GOLD_CORRECT`）：3 条
   - 详细实证报告见 [`outputs/cmmlu_v1_0_1/eval_summary.md`](outputs/cmmlu_v1_0_1/eval_summary.md)

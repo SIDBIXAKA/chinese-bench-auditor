@@ -186,15 +186,19 @@ def export_web_prompts(csv_path: str, out_txt_path: str, limit: int = 20, batch_
 def summarize_eval_sheet(
     csv_path: str,
     model_cols: tuple[str, ...] = ("model_deepseek_ans", "model_qwen_ans", "model_doubao_ans"),
+    summary_md_path: str | None = None,
+    model_map: dict[str, str] | None = None,
 ) -> dict[str, object]:
     """Summarize benchmark vs multi-model agreement and Bad Case taxonomy."""
     total = 0
     evaluated = 0
     taxonomy_counts: Counter[str] = Counter()
     verdict_counts: Counter[str] = Counter()
+    rows: list[dict[str, str]] = []
 
     with open(csv_path, "r", encoding="utf-8-sig", newline="") as f:
         for row in csv.DictReader(f):
+            rows.append(row)
             total += 1
             verdict = (row.get("human_verdict") or "").strip()
             if verdict:
@@ -210,12 +214,21 @@ def summarize_eval_sheet(
                 bucket = classify_disagreement(row.get("check_code", ""), gold, preds)
                 taxonomy_counts[bucket] += 1
 
-    return {
+    summary: dict[str, object] = {
         "total_rows": total,
         "evaluated_rows": evaluated,
         "taxonomy_counts": dict(taxonomy_counts),
         "human_verdicts": dict(verdict_counts),
     }
+    if summary_md_path:
+        active_map = model_map or {
+            col: DEFAULT_MODEL_COLUMNS.get(col, col)
+            for col in model_cols
+            if any((r.get(col) or "").strip() for r in rows)
+        }
+        _write_eval_summary_md(summary_md_path, rows, active_map or DEFAULT_MODEL_COLUMNS, summary)
+        summary["summary_md_path"] = summary_md_path
+    return summary
 
 
 def _write_eval_summary_md(
@@ -245,7 +258,28 @@ def _write_eval_summary_md(
     for bucket, cnt in summary.get("taxonomy_counts", {}).items():  # type: ignore[union-attr]
         lines.append(f"| `{bucket}` | {cnt} | {labels.get(bucket, '')} |")
 
-    lines.extend(["", "## 二、典型案例明晰（前 15 条已测记录）", ""])
+    verdicts = summary.get("human_verdicts") or {}
+    if verdicts:
+        lines.extend(
+            [
+                "",
+                "## 二、人工复核最终裁决统计（Human Verdicts）",
+                "",
+                "| 人工裁决结论 | 样本数 |",
+                "| :--- | ---: |",
+            ]
+        )
+        for verdict, cnt in verdicts.items():  # type: ignore[union-attr]
+            lines.append(f"| `{verdict}` | {cnt} |")
+        lines.extend(["", "### 已复核样本明细", ""])
+        for row in rows:
+            hv = (row.get("human_verdict") or "").strip()
+            if hv:
+                lines.append(
+                    f"- **`{row['uid']}`** -> `{hv}` | 原金标 `{row['benchmark_answer']}` | {row.get('root_cause_notes', '')}"
+                )
+
+    lines.extend(["", "## 三、典型案例明晰（前 15 条已测记录）", ""])
     cols = list(model_map.keys())
     shown = 0
     for row in rows:
